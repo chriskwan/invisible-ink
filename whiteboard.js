@@ -18,6 +18,7 @@
 		document.getElementById("connectLink").innerHTML = window.location;
 		document.getElementById("protocol").innerHTML = window.location.protocol;
 
+		//cwkTODO move to p2p
 		setUpPeer();
 	}
 
@@ -66,6 +67,8 @@
 		};
 
 		drawPoint(point, penColor);
+
+		//cwkTODO move to p2p
 		sendPointToPeers(point, penColor);
 	}
 
@@ -73,23 +76,19 @@
 		isDrawing = false;
 	}
 
+	//cwkTODO is this still needed?
+	//cwkTODO move to p2p
 	function sendPointToPeers(point, color) {
-		for (var currentPeerId in peer.connections) {
-			if (!peer.connections.hasOwnProperty(currentPeerId)) {
-				return;
-			}
-
-			var connectionsWithCurrentPeer = peer.connections[currentPeerId];
-
-			// It's possible to have multiple connections with the same peer,
-			// so send on all of them
-			for (var i=0; i<connectionsWithCurrentPeer.length; i++) {
-				connectionsWithCurrentPeer[i].send({point: point, color: color});
-			}
-		}	
+		sendDataToPeers({point: point, color: color});
 	}
 
+	//cwkTODO move to p2p?
 	function sendPathToPeers(path, color) {
+		sendDataToPeers({path: path, color: color});
+	}
+
+	//cwkTODO move to p2p
+	function sendDataToPeers(data) {
 		for (var currentPeerId in peer.connections) {
 			if (!peer.connections.hasOwnProperty(currentPeerId)) {
 				return;
@@ -100,7 +99,7 @@
 			// It's possible to have multiple connections with the same peer,
 			// so send on all of them
 			for (var i=0; i<connectionsWithCurrentPeer.length; i++) {
-				connectionsWithCurrentPeer[i].send({path: path, color: color});
+				connectionsWithCurrentPeer[i].send(data);
 			}
 		}
 	}
@@ -126,9 +125,12 @@
 
 	function setUpUI() {
 		createColorRadioButtons();
+
+		//cwkTODO move to p2p
 		setUpPeerConnectUI();
 	}
 
+	//cwkTODO move to p2p
 	function setUpPeerConnectUI() {
 		var peerIdInput = document.getElementById("peerIdInput");
 		var connectBtn = document.getElementById("connectBtn")
@@ -166,28 +168,17 @@
 
 	// Sending a connection to a peer (i.e.: you hit the Connect button)
 	function connectToPeer(peerId) {
-		var conn = peer.connect(peerId);
-
-		// Connection has been established
-		conn.on('open', function () {
+		Whiteboard.p2p.connectToPeer(peerId, function (conn) {
 			setUpCanvasForConnection(conn);
 			updateConnectionsList();
-		});
-
-		conn.on('close', function () {
+		}, function (conn) {
 			addToStatus(conn.peer + " left the whiteboard. Oh well.");
 			updateConnectionsList();
 		});
 	}
 
 	function setUpPeer() {
-		peer = new Peer({
-			key: 'lwjd5qra8257b9', //cwkTODO this is the demo api key
-			debug: 3
-		});
-
-		// Initialization - ready to receive connections
-		peer.on('open', function (id) {
+		peer = Whiteboard.p2p.createPeer(function (id) {
 			addToStatus('My peer ID is: ' + id);
 
 			document.getElementById("mypeerid").value = id;
@@ -195,11 +186,8 @@
 			createConnectLink();
 
 			connectToPeerInUrl();
-		});
-
-		// Receiving a connection from a peer (i.e.: they hit the Connect button)
-		peer.on('connection', function (conn) {
-
+		}, function (conn) {
+			//cwkTODO want to move these into p2p but not sure how
 			setUpCanvasForConnection(conn);
 
 			conn.on('open', function () {
@@ -225,6 +213,8 @@
 		});
 	}
 
+	//cwkTODO move to p2p
+	//cwkTODO split?
 	function updateConnectionsList() {
 		var connectionList = document.getElementById("connectionList");
 		
@@ -247,6 +237,7 @@
 		connectionList.innerHTML = connectionListString.length ? connectionListString : "Nobody ( everyone left :( )";
 	}
 
+	//cwkTODO move to p2p
 	function createConnectLink() {
 		var connectLink = document.getElementById("connectLink");
 		// Ref: http://stackoverflow.com/a/5817548
@@ -254,6 +245,7 @@
 		connectLink.value = urlWithoutQueryString + "?connectTo=" + peer.id;
 	}
 
+	//cwkTODO move to p2p
 	function connectToPeerInUrl() {
 		// There's probably a way to do this with one regex,
 		// but I think this is more readable
@@ -278,6 +270,7 @@
 		}
 	}
 
+	//cwkTODO move to p2p
 	function setUpCanvasForConnection(conn) {
 		conn.on('data', function (data) {
 			if (data.connections) {
